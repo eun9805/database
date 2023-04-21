@@ -27,7 +27,7 @@ def get_stock_list():
         stock_list.append(code)
     return stock_list
 
-def get_db(dbname='2023-04-19_naver_stock', table_name='stock_year', stock_list=get_stock_list()):
+def get_db(dbname='2023-04-19_naver_stock.db', table_name='stock_year', stock_list=get_stock_list()):
     con = sqlite3.connect(dbname)
     c = con.cursor()
     df = pd.read_sql(f"SELECT * FROM {table_name}", con)
