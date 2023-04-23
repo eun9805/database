@@ -8,7 +8,7 @@ def get_stock_list():
 
     kosdaq_master_download(base_dir)
     df = get_kosdaq_master_dataframe(base_dir)
-    kosdaq_df = df[(df['증권그룹구분코드']=='ST') & (df['저유동성종목 여부']=='N') & (df['기업인수목적회사여부']=='N') & (df['거래정지 여부']=='N') & (df['정리매매 여부']=='N') & (df['관리 종목 여부']=='N') & (df['시장 경고 구분 코드']==0) & (df['불성실 공시 여부']=='N') & (df['우선주 구분 코드']==0) & (df['단기순이익']>0)]
+    kosdaq_df = df[(df['증권그룹구분코드']=='ST') & (df['저유동성종목 여부']=='N') & (df['기업인수목적회사여부']=='N') & (df['거래정지 여부']=='N') & (df['정리매매 여부']=='N') & (df['관리 종목 여부']=='N') & (df['시장 경고 구분 코드']==0) & (df['불성실 공시 여부']=='N') & (df['우선주 구분 코드']==0) & (df['당기순이익']>0)]
 
     stock_list = []
     for code in kospi_df['단축코드']:
@@ -52,4 +52,17 @@ def get_rank(df):
     raw_df = raw_df.sort_values(by='총합', ascending=False).iloc[0:21]
     return raw_df
 
-get_rank(get_db())
+# get_rank(get_db())
+
+def make_list():
+    kospi_master_download(base_dir)
+    df = get_kospi_master_dataframe(base_dir) 
+    kospi_df = df[(df['그룹코드']=='ST') & (df['거래정지']=='N') & (df['정리매매']=='N') & (df['관리종목']=='N') & (df['불성실공시']=='N') & (df['저유동성']=='N') & (df['시장경고']==0) & (df['우선주']==0) & (df['당기순이익']>0) & (df['SPAC']=='N')]
+
+    kosdaq_master_download(base_dir)
+    df = get_kosdaq_master_dataframe(base_dir)
+    kosdaq_df = df[(df['증권그룹구분코드']=='ST') & (df['저유동성종목 여부']=='N') & (df['기업인수목적회사여부']=='N') & (df['거래정지 여부']=='N') & (df['정리매매 여부']=='N') & (df['관리 종목 여부']=='N') & (df['시장 경고 구분 코드']==0) & (df['불성실 공시 여부']=='N') & (df['우선주 구분 코드']==0) & (df['당기순이익']>0)]
+
+    return kospi_df, kosdaq_df
+
+kospi, kosdaq = make_list()

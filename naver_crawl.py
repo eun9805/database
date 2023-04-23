@@ -5,13 +5,11 @@ import ssl
 import zipfile
 import os
 import pandas as pd
-import re
 import requests
-import sqlite3
-import time
+from bs4 import BeautifulSoup
 from datetime import datetime
 
-base_dir = os.getcwd()
+base_dir = '/home/ubuntu/database'
 
 def kospi_master_download(base_dir, verbose=False):
     cwd = os.getcwd()
@@ -191,72 +189,93 @@ def get_kosdaq_master_dataframe(base_dir):
 
     return df
 
-
-def FS_crawler_year(code):
-    try:
-        re_enc = re.compile("encparam: '(.*)'", re.IGNORECASE) 
-        re_id = re.compile("id: '([a-zA-Z0-9]*)' ?", re.IGNORECASE)
-
-        url = "http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp_cd={}".format(code) 
-        html = requests.get(url).text 
-        encparam = re_enc.search(html).group(1) 
-        encid = re_id.search(html).group(1)
-
-        url = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd={}&fin_typ=0&freq_typ=A&encparam={}&id={}".format(code, encparam, encid) 
-        headers = {"Referer": "HACK"}
-        html = requests.get(url, headers=headers).text 
-        # print(html)
-
-        dfs = pd.read_html(html)
-        df = dfs[1]['연간연간컨센서스보기']
-        df.index = dfs[1]['주요재무정보'].values.flatten()
-        df = df.transpose()
-        df = df.reset_index(drop=False)
-        df.rename(columns={'index':'연도'}, inplace=True)
-        df.index = [code]*len(df)
-        
-        today = str(datetime.now().date())
-        db_name = today+"_naver_stock.db"
-        
-        con = sqlite3.connect(db_name)
-        df.to_sql('stock_year', con, if_exists='append', index_label='code')
-        print(f'{code} Done')
-
-    except Exception as e:
-        print(e)
-        return e
-
-def getColumnName( dbName ,tableName ,prResult= False ):
-    con = sqlite3.connect( dbName )
-    cur = con.cursor()
-    cur.execute("SELECT * FROM %s LIMIT 1;" % tableName )
-    con.commit()
-    cur.close()
-    con.close()
-   
-    fieldList = [ fd[0] for fd in cur.description ]
-    if prResult:
-        print( '* Column List *' )
-        for fd in fieldList:
-            print( fd)
-    return fieldList   
-
-def main():
+def make_list():
     kospi_master_download(base_dir)
     df = get_kospi_master_dataframe(base_dir) 
-    kospi_df = df[(df['그룹코드']=='ST') & (df['거래정지']=='N') & (df['정리매매']=='N') & (df['관리종목']=='N') & (df['불성실공시']=='N') & (df['저유동성']=='N') & (df['시장경고']==0) & (df['우선주']==0) & (df['당기순이익']>0) & (df['SPAC']=='N')]
+    kospi_df = df[(df['그룹코드']=='ST') & (df['거래정지']=='N') & (df['정리매매']=='N') & (df['관리종목']=='N') & (df['불성실공시']=='N') & (df['저유동성']=='N') & (df['시장경고']==0) & (df['우선주']==0) & (df['SPAC']=='N')]
 
     kosdaq_master_download(base_dir)
     df = get_kosdaq_master_dataframe(base_dir)
-    kosdaq_df = df[(df['증권그룹구분코드']=='ST') & (df['저유동성종목 여부']=='N') & (df['기업인수목적회사여부']=='N') & (df['거래정지 여부']=='N') & (df['정리매매 여부']=='N') & (df['관리 종목 여부']=='N') & (df['시장 경고 구분 코드']==0) & (df['불성실 공시 여부']=='N') & (df['우선주 구분 코드']==0) & (df['당기순이익']>0)]
+    kosdaq_df = df[(df['증권그룹구분코드']=='ST') & (df['저유동성종목 여부']=='N') & (df['기업인수목적회사여부']=='N') & (df['거래정지 여부']=='N') & (df['정리매매 여부']=='N') & (df['관리 종목 여부']=='N') & (df['시장 경고 구분 코드']==0) & (df['불성실 공시 여부']=='N') & (df['우선주 구분 코드']==0)]
 
-    for i in kospi_df['단축코드']:
-        FS_crawler_year(i)
-        time.sleep(1)
+    ticker_list = kospi_df['단축코드'].tolist() + kosdaq_df['단축코드'].tolist()
+    return ticker_list
 
-    for i in kosdaq_df['단축코드']:
-        FS_crawler_year(i)
-        time.sleep(1) 
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
 
-if __name__ == "__main__":
-    main()
+def crawling_data(ticker):
+    url = f"https://finance.naver.com/item/main.nhn?code={ticker}"
+    html = requests.get(url, headers={'User-agent':'Mozilla/5.0'})
+    soup = BeautifulSoup(html.text, "lxml")
+    per = soup.select("#_per")
+    pbr = soup.select("#_pbr")
+    market_sum = soup.select("#_market_sum")
+    pers = []
+    pbrs = []
+    market_sums = []
+    ticker_list = []
+
+    ticker_list.append(ticker)
+
+    if not per:  # 리스트가 비어있을 경우 None으로 변환
+        per = [None]
+    for pe in per:
+        if pe != None:
+            per_text = pe.text
+            per_text = per_text.replace(",", "")  # float변환을 위해 따옴표 제거
+            pers.append(float(per_text))
+        else:
+            per_text = pe
+            pers.append(per_text)
+
+    if not pbr:  # 리스트가 비어있을 경우 None으로 변환
+        pbr = [None]
+    for pb in pbr:
+        if pb != None:
+            pbr_text = pb.text
+            pbr_text = pbr_text.replace(",", "")  # float변환을 위해 따옴표 제거
+            pbrs.append(float(pbr_text))
+        else:
+            pbr_text = pb
+            pbrs.append(pbr_text)
+
+    if not market_sum:  # 리스트가 비어있을 경우 None으로 변환
+        market_sum = [None]
+    for d in market_sum:
+        if d != None:
+            market_sum_text = d.text
+            market_sum_text = market_sum_text.replace("조", "")
+            market_sum_text = market_sum_text.replace("\n", "")
+            market_sum_text = market_sum_text.replace("\t", "")
+            market_sum_text = market_sum_text.replace(",", "")
+            market_sums.append(int(market_sum_text))
+        else:
+            market_sum_text = d
+            market_sums.append(market_sum_text)
+    
+    stock_df = pd.DataFrame({"CODE":ticker_list,
+                       "PER":pers,
+                       "PBR":pbrs,
+                       "SUM":market_sums})
+
+    return stock_df
+
+ticker_list = make_list()
+stock_df = pd.DataFrame(columns=['CODE', 'PER', 'PBR', 'SUM'])
+
+for i in ticker_list:
+    stock_df = pd.concat([stock_df, crawling_data(i)])
+    print(i, "Done")
+
+stock_df = stock_df.dropna()
+rank_df = stock_df.copy()
+rank_df['PER_rank'] = rank_df['PER'].rank(ascending=False)
+rank_df['PBR_rank'] = rank_df['PBR'].rank(ascending=False)
+rank_df['SUM_rank'] = rank_df['SUM'].rank(ascending=False)
+rank_df['Total_rank'] = rank_df['PER_rank'] + rank_df['PBR_rank'] + rank_df['SUM_rank']
+rank_df = rank_df.sort_values(by='Total_rank', ascending=False)
+today = datetime.now().date()
+rank_df.to_csv(f'/home/ubuntu/database/{today}_rank.csv', index=False)
+# test_df = pd.read_csv('/home/ubuntu/database/2023-04-22_rank.csv', dtype={'CODE':str})
