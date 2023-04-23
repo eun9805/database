@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 import time
@@ -22,7 +23,8 @@ options.add_argument("--no-sandbox")
 options.add_argument('--allow-insecure-localhost')
 options.add_argument(f'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36')
 
-browser = webdriver.Firefox(options=options)
+service = Service(log_path='/home/ubuntu/snap/firefox/geckodriver.log')
+browser = webdriver.Firefox(options=options, service=service)
 
 browser.get("https://intro.newsystock.com/login/")
 
