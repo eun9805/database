@@ -21,7 +21,8 @@ options.add_argument('window-size=1920x1080')
 options.add_argument("disable-gpu")
 options.add_argument("--no-sandbox")
 options.add_argument('--allow-insecure-localhost')
-options.add_argument(f'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36')
+user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
+options.set_preference("general.useragent.override", user_agent)
 
 service = Service(log_path='/home/ubuntu/snap/firefox/geckodriver.log')
 browser = webdriver.Firefox(options=options, service=service)

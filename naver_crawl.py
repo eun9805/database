@@ -277,5 +277,5 @@ rank_df['SUM_rank'] = rank_df['SUM'].rank(ascending=False)
 rank_df['Total_rank'] = rank_df['PER_rank'] + rank_df['PBR_rank'] + rank_df['SUM_rank']
 rank_df = rank_df.sort_values(by='Total_rank', ascending=False)
 today = datetime.now().date()
-rank_df.to_csv(f'/home/ubuntu/database/{today}_rank.csv', index=False)
+rank_df.to_csv(f'/home/ubuntu/database/{today}-rank.csv', index=False)
 # test_df = pd.read_csv('/home/ubuntu/database/2023-04-22_rank.csv', dtype={'CODE':str})
