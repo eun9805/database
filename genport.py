@@ -24,7 +24,7 @@ options.add_argument('--allow-insecure-localhost')
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
 options.set_preference("general.useragent.override", user_agent)
 
-service = Service(log_path='/home/ubuntu/snap/firefox/geckodriver.log')
+service = Service(log_path='/home/ubuntu/.wdm/geckodriver.log')
 browser = webdriver.Firefox(options=options, service=service)
 
 browser.get("https://intro.newsystock.com/login/")
@@ -54,7 +54,7 @@ table_html = str(table)
 table_df_list = pd.read_html(table_html)
 table_df = table_df_list[0]
 table_df.dropna(inplace=True)
-table_df.to_csv('/home/ubuntu/database/genport.csv', index=False)
+table_df.to_csv('genport.csv', index=False)
 
 browser.quit()
 
